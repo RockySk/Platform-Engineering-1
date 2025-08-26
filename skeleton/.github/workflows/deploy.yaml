@@ -3,8 +3,10 @@ name: Deploy Website to S3 and CloudFront
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
+
+  
 
 permissions:
   id-token: write # Required for OIDC authentication
@@ -20,8 +22,11 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/GitHubAction-S3-DeployRole # <<<--- CHANGE THIS
+          role-to-assume: arn:aws:iam::484907513684:role/GitHubActionDeployerRole1 # <<<--- CHANGE THIS
           aws-region: ap-south-1
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
