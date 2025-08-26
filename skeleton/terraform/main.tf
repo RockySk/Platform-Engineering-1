@@ -4,11 +4,11 @@ provider "aws" {
 
 # 1. Create the S3 bucket for static website hosting
 resource "aws_s3_bucket" "website_bucket" {
-  bucket = var.bucket_name
+  bucket = "backstage-demo-app"
 
   tags = {
-    Name        = "Static Website Bucket"
-    ManagedBy   = "Terraform"
+    Name      = "Static Website Bucket"
+    ManagedBy = "Terraform"
   }
 }
 
@@ -24,7 +24,7 @@ resource "aws_s3_bucket_public_access_block" "website_bucket_pab" {
 
 # 3. Create an Origin Access Identity for CloudFront to access the S3 bucket
 resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for ${var.bucket_name}"
+  comment = "OAI for backstage-demo-app"
 }
 
 # 4. Create an S3 bucket policy that allows the OAI to read from the bucket
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = aws_s3_bucket.website_bucket.bucket_regional_domain_name
-    origin_id   = "S3-${var.bucket_name}"
+    origin_id   = "S3-backstage-demo-app"
 
     s3_origin_config {
       origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
@@ -63,7 +63,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${var.bucket_name}"
+    target_origin_id = "S3-backstage-demo-app"
     
     forwarded_values {
       query_string = false
@@ -97,7 +97,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   tags = {
-    Name        = "S3 Distribution for ${var.bucket_name}"
-    ManagedBy   = "Terraform"
+    Name      = "S3 Distribution for backstage-demo-app"
+    ManagedBy = "Terraform"
   }
 }
