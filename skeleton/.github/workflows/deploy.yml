@@ -1,0 +1,62 @@
+name: Deploy Website to S3 and CloudFront
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: read  # Required to checkout the code
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubAction-S3-DeployRole # <<<--- CHANGE THIS
+          aws-region: ap-south-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ./terraform
+
+      - name: Terraform Apply
+        id: apply
+        # We use the GitHub repository name to create a unique bucket name
+        run: terraform apply -auto-approve -var="bucket_name=${{ github.event.repository.name }}"
+        working-directory: ./terraform
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Deploy to S3
+        # Use the S3 bucket name from the Terraform output
+        run: |
+          S3_BUCKET=$(terraform output -raw s3_bucket_name)
+          aws s3 sync ./build s3://${S3_BUCKET} --delete
+        working-directory: ./terraform
+
+      - name: Display Website URL
+        run: |
+          CLOUDFRONT_URL=$(terraform output -raw cloudfront_domain_name)
+          echo "Website is deployed at: https://${CLOUDFRONT_URL}"
+        working-directory: ./terraform
